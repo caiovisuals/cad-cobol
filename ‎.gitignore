@@ -1,5 +1,5 @@
 # Binarios compilados
-/bin/cadastro
+/bin/records
 *.o
 
 # Base de dados gerada em tempo de execucao
