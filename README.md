@@ -1,0 +1,5 @@
+# SISTEMA DE CADASTRO BÁSICO (COBOL) - ᴘᴛ
+
+# BASIC REGISTRATION SYSTEM (COBOL) - ᴇɴ
+
+by caiothevisual
