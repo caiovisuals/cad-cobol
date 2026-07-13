@@ -42,7 +42,22 @@
        01  WS-CONFIRM                PIC X.
        01  WS-CONTINUE               PIC X.
 
-      *> Auxiliares da validacao de CPF (digito verificador).
+       01  WS-FOUND-FLAG             PIC X VALUE "N".
+           88  FOUND                 VALUE "S".
+           88  NOT-FOUND             VALUE "N".
+
+       01  WS-CPF-FLAG               PIC X VALUE "N".
+           88  CPF-VALID             VALUE "S".
+           88  CPF-INVALID           VALUE "N".
+
+       01  WS-REGISTERS.
+           05  WS-REG OCCURS WS-MAX-REG TIMES.
+               10  WS-REC-NAME       PIC X(30).
+               10  WS-REC-AGE        PIC 9(3).
+               10  WS-REC-EMAIL      PIC X(50).
+               10  WS-REC-CPF        PIC X(11).
+
+      *Auxiliares da validacao de CPF (digito verificador).
        01  WS-CPF-DIGITS.
            05  WS-CPF-D OCCURS 11 TIMES PIC 9.
        01  WS-ALL-SAME               PIC 9 VALUE 0.
@@ -96,35 +111,47 @@
            END-IF
 
            PERFORM READ-NAME
-           IF WS-NAME (WS-COUNT + 1) = SPACES
-               DISPLAY ">> Nome invalido. Cadastro cancelado."
+           IF WS-INPUT-NAME = SPACES
+               DISPLAY ">> Nome invalido."
                PERFORM PAUSE
                EXIT PARAGRAPH
            END-IF
 
            PERFORM READ-AGE
-           IF WS-AGE-NUM = 0
-               DISPLAY ">> Idade invalida. Cadastro cancelado."
+           IF WS-INPUT-AGE = 0 OR WS-INPUT-AGE > 120
+               DISPLAY ">> Idade invalida."
                PERFORM PAUSE
                EXIT PARAGRAPH
            END-IF
 
            PERFORM READ-EMAIL
            IF WS-AT-POS = 0
-               DISPLAY ">> E-mail invalido (sem '@'). Cancelado."
+               DISPLAY ">> E-mail invalido."
                PERFORM PAUSE
                EXIT PARAGRAPH
            END-IF
 
            PERFORM READ-CPF
-           IF WS-CPF (WS-COUNT + 1) = SPACES
-               DISPLAY ">> CPF invalido. Cadastro cancelado."
+           MOVE WS-INPUT-CPF TO WS-SEARCH-CPF
+           PERFORM VALIDATE-CPF
+           IF CPF-INVALID
+               DISPLAY ">> CPF invalido."
+               PERFORM PAUSE
+               EXIT PARAGRAPH
+           END-IF
+
+           PERFORM FIND-CPF
+           IF FOUND
+               DISPLAY ">> Ja existe cadastro com esse CPF."
                PERFORM PAUSE
                EXIT PARAGRAPH
            END-IF
 
            ADD 1 TO WS-COUNT
-           MOVE WS-AGE-NUM TO WS-AGE (WS-COUNT)
+           MOVE WS-INPUT-NAME  TO WS-REC-NAME  (WS-COUNT)
+           MOVE WS-INPUT-AGE   TO WS-REC-AGE   (WS-COUNT)
+           MOVE WS-INPUT-EMAIL TO WS-REC-EMAIL (WS-COUNT)
+           MOVE WS-INPUT-CPF   TO WS-REC-CPF   (WS-COUNT)
            PERFORM SAVE-FILE
            DISPLAY " "
            DISPLAY ">> Cadastro realizado com sucesso!"
@@ -265,11 +292,7 @@
        READ-AGE.
            DISPLAY "Digite a idade: " WITH NO ADVANCING
            ACCEPT WS-INPUT-AGE-TXT
-           IF WS-INPUT-AGE-TXT IS NUMERIC
-               MOVE WS-INPUT-AGE-TXT TO WS-INPUT-AGE
-           ELSE
-               MOVE 0 TO WS-INPUT-AGE
-           END-IF.
+           COMPUTE WS-INPUT-AGE = FUNCTION NUMVAL (WS-INPUT-AGE-TXT).
 
        READ-EMAIL.
            DISPLAY "Digite o e-mail: " WITH NO ADVANCING
