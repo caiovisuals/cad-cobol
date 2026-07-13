@@ -27,7 +27,29 @@
        01  WS-COUNT                  PIC 9(4) VALUE 0.
        01  WS-I                      PIC 9(4) VALUE 0.
        01  WS-J                      PIC 9(4) VALUE 0.
+       01  WS-K                      PIC 9(4) VALUE 0.
        01  WS-TARGET                 PIC 9(4) VALUE 0.
+
+       01  WS-OPTION                 PIC X VALUE SPACE.
+       01  WS-INPUT-NAME             PIC X(30).
+       01  WS-INPUT-AGE-TXT          PIC X(3).
+       01  WS-INPUT-AGE              PIC 9(3).
+       01  WS-INPUT-EMAIL            PIC X(50).
+       01  WS-INPUT-CPF              PIC X(11).
+       01  WS-SEARCH-CPF             PIC X(11).
+       01  WS-AT-POS                 PIC 9(4).
+       01  WS-DOT-POS                PIC 9(4).
+       01  WS-CONFIRM                PIC X.
+       01  WS-CONTINUE               PIC X.
+
+      *> Auxiliares da validacao de CPF (digito verificador).
+       01  WS-CPF-DIGITS.
+           05  WS-CPF-D OCCURS 11 TIMES PIC 9.
+       01  WS-ALL-SAME               PIC 9 VALUE 0.
+       01  WS-SUM                    PIC 9(6) VALUE 0.
+       01  WS-WEIGHT                 PIC 9(2) VALUE 0.
+       01  WS-MOD                    PIC 9(2) VALUE 0.
+       01  WS-DV                     PIC 9(2) VALUE 0.
 
        01 WS-NAME.
            05 WS-NAME-TXT   PIC X(30).
@@ -215,6 +237,24 @@
            END-PERFORM
            IF NOT-FOUND
                DISPLAY ">> Nenhum registro com esse CPF."
+               PERFORM PAUSE
+               EXIT PARAGRAPH
+           END-IF
+
+           DISPLAY " "
+           DISPLAY ">> Encontrado: " WS-REC-NAME (WS-TARGET)
+           DISPLAY "Confirma exclusao? (S/N): " WITH NO ADVANCING
+           ACCEPT WS-CONFIRM
+           IF WS-CONFIRM = "S" OR WS-CONFIRM = "s"
+               PERFORM VARYING WS-J FROM WS-TARGET BY 1
+                       UNTIL WS-J >= WS-COUNT
+                   MOVE WS-REG (WS-J + 1) TO WS-REG (WS-J)
+               END-PERFORM
+               SUBTRACT 1 FROM WS-COUNT
+               PERFORM SAVE-FILE
+               DISPLAY ">> Registro excluido com sucesso!"
+           ELSE
+               DISPLAY ">> Exclusao cancelada."
            END-IF
            PERFORM PAUSE.
 
@@ -241,6 +281,7 @@
        READ-CPF.
            DISPLAY "Digite o CPF (11 digitos): " WITH NO ADVANCING
            ACCEPT WS-INPUT-CPF.
+       
        FIND-CPF.
            SET NOT-FOUND TO TRUE
            MOVE 0 TO WS-TARGET
